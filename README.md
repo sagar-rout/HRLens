@@ -6,15 +6,16 @@ An intelligent HR search system using semantic caching and vector similarity.
 
 HRLens is a natural language search interface for HR data that combines:
 - Semantic understanding using LLMs
-- Vector similarity caching
+- Intelligent in-memory caching with vector similarity
 - Elasticsearch for data storage and retrieval
-- Milvus for vector similarity search
+- Performance tracking and monitoring
 
 ## Features
 
 - Natural language query processing
-- Semantic query caching
-- Vector similarity matching
+- Dual-layer caching system:
+  - Exact string matching
+  - Vector similarity matching
 - Intelligent query transformation
 - Performance metrics tracking
 - Cache statistics monitoring
@@ -26,22 +27,18 @@ HRLens is a natural language search interface for HR data that combines:
 1. **Search Agent**
    - Converts natural language to Elasticsearch queries
    - Uses OpenAI embeddings for semantic understanding
-   - Manages query caching and retrieval
+   - Implements LRU caching with vector similarity
+   - Manages both exact and semantic query matching
 
-2. **Vector Cache**
-   - Stores semantically similar queries
-   - Uses Milvus for vector similarity search
-   - Implements intelligent cache matching
-
-3. **Cache Stats**
+2. **Cache Stats**
    - Tracks cache performance metrics
    - Monitors hit/miss rates
    - Stores statistics in Elasticsearch
 
-4. **Service Container**
-   - Manages dependency injection
-   - Handles service lifecycle
-   - Ensures singleton instances
+3. **Elasticsearch Client**
+   - Handles search operations
+   - Manages index operations
+   - Provides robust error handling
 
 ### Project Structure
 
@@ -52,15 +49,11 @@ HRLens/
 │   │   └── v1/
 │   │       └── search.py         # API endpoints
 │   ├── core/
-│   │   ├── container.py         # Dependency injection
-│   │   ├── services.py          # Service interfaces
-│   │   ├── search_agent.py      # Query processing
-│   │   ├── vector_cache.py      # Cache management
+│   │   ├── search_agent.py      # Query processing & caching
 │   │   ├── cache_stats.py       # Statistics tracking
 │   │   └── elasticsearch_client.py
 │   ├── schema/
-│   │   ├── templates/           # Query templates
-│   │   └── docs/               # System documentation
+│   │   └── templates/           # Query templates
 │   └── utils/
 │       └── logger.py           # Logging utilities
 ├── tests/
@@ -72,7 +65,7 @@ HRLens/
 
 ### 1. Search API
 ```http
-POST /api/search
+POST /api/v1/search
 Content-Type: application/json
 
 {
@@ -98,7 +91,7 @@ Response:
 
 ### 2. Cache Statistics
 ```http
-GET /api/cache/stats
+GET /api/v1/cache/stats
 ```
 
 Response:
@@ -130,6 +123,27 @@ Response:
 }
 ```
 
+## Caching System
+
+The service implements a sophisticated dual-layer caching system:
+
+1. **Exact Match Cache**
+   - LRU (Least Recently Used) eviction policy
+   - Direct string matching for identical queries
+   - O(1) lookup time
+
+2. **Semantic Match Cache**
+   - Vector similarity comparison
+   - Configurable similarity threshold (default: 0.95)
+   - Catches semantically equivalent queries
+   - Uses OpenAI embeddings for comparison
+
+Features:
+- Configurable cache size (default: 1000 entries)
+- Automatic cache cleanup
+- Performance metrics tracking
+- Thread-safe operations
+
 ## Setup
 
 1. Environment Setup
@@ -153,11 +167,18 @@ uvicorn app.main:app --reload
 
 Key configuration options in `.env`:
 ```env
+# API Settings
+LOG_LEVEL=INFO
+LOG_FILE=logs/app.log
+
+# OpenAI Settings
 OPENAI_API_KEY=your_api_key
-ELASTICSEARCH_HOST=http://localhost:9200
+MODEL_NAME=gpt-4-mini
+
+# Elasticsearch Settings
+ES_HOSTS=http://localhost:9200
+ES_VERIFY_CERTS=true
 ELASTICSEARCH_INDEX=hr_lens
-MILVUS_HOST=localhost
-MILVUS_PORT=19530
 ```
 
 ## Dependencies
@@ -165,6 +186,6 @@ MILVUS_PORT=19530
 - Python 3.9+
 - FastAPI
 - Elasticsearch
-- Milvus
 - OpenAI
 - LangChain
+- NumPy (for vector operations)
