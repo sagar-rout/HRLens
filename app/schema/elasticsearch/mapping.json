@@ -1,0 +1,158 @@
+{
+  "mappings": {
+    "properties": {
+      "employee_id": {
+        "type": "keyword"
+      },
+      "personal_info": {
+        "properties": {
+          "first_name": {
+            "type": "text",
+            "fields": {
+              "keyword": {
+                "type": "keyword"
+              }
+            }
+          },
+          "last_name": {
+            "type": "text",
+            "fields": {
+              "keyword": {
+                "type": "keyword"
+              }
+            }
+          },
+          "email": {
+            "type": "keyword"
+          },
+          "phone": {
+            "type": "keyword"
+          },
+          "date_of_birth": {
+            "type": "date"
+          },
+          "gender": {
+            "type": "keyword"
+          },
+          "marital_status": {
+            "type": "keyword"
+          }
+        }
+      },
+      "employment_details": {
+        "properties": {
+          "hire_date": {
+            "type": "date"
+          },
+          "position": {
+            "type": "keyword"
+          },
+          "department": {
+            "properties": {
+              "id": {
+                "type": "keyword"
+              },
+              "name": {
+                "type": "keyword"
+              }
+            }
+          },
+          "manager_id": {
+            "type": "keyword"
+          },
+          "employment_status": {
+            "type": "keyword"
+          },
+          "employment_type": {
+            "type": "keyword"
+          }
+        }
+      },
+      "salary_info": {
+        "properties": {
+          "base_salary": {
+            "type": "float"
+          },
+          "currency": {
+            "type": "keyword"
+          },
+          "salary_history": {
+            "type": "nested",
+            "properties": {
+              "effective_date": {
+                "type": "date"
+              },
+              "amount": {
+                "type": "float"
+              },
+              "reason": {
+                "type": "keyword"
+              }
+            }
+          }
+        }
+      },
+      "leave_records": {
+        "type": "nested",
+        "properties": {
+          "leave_id": {
+            "type": "keyword"
+          },
+          "leave_type": {
+            "type": "keyword"
+          },
+          "start_date": {
+            "type": "date"
+          },
+          "end_date": {
+            "type": "date"
+          },
+          "status": {
+            "type": "keyword"
+          },
+          "reason": {
+            "type": "text"
+          }
+        }
+      },
+      "address": {
+        "properties": {
+          "street": {
+            "type": "text"
+          },
+          "city": {
+            "type": "keyword"
+          },
+          "state": {
+            "type": "keyword"
+          },
+          "country": {
+            "type": "keyword"
+          },
+          "postal_code": {
+            "type": "keyword"
+          }
+        }
+      },
+      "branch": {
+        "properties": {
+          "branch_id": {
+            "type": "keyword"
+          },
+          "branch_name": {
+            "type": "keyword"
+          },
+          "location": {
+            "type": "geo_point"
+          }
+        }
+      },
+      "created_at": {
+        "type": "date"
+      },
+      "updated_at": {
+        "type": "date"
+      }
+    }
+  }
+} 

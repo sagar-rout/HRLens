@@ -1,0 +1,14 @@
+fastapi==0.115.8
+uvicorn==0.27.0
+pydantic==2.10.6
+pydantic-settings==2.7.1
+elasticsearch>=8.17.0
+langchain==0.3.18
+langchain-openai==0.3.4
+langchain-community==0.3.17
+openai==1.61.1
+pymilvus==2.5.4
+python-dotenv==1.0.1
+loguru==0.7.3
+faker>=8.0.0
+python-dateutil>=2.8.2
