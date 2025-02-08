@@ -1,10 +1,11 @@
 from fastapi import APIRouter, HTTPException
 from typing import Dict, Any
 from pydantic import BaseModel
-from app.core.container import ServiceContainer
+from app.core.search_agent import SearchAgent
+from app.core.elasticsearch_client import ElasticsearchClient
+from app.core.cache_stats import CacheStats
 from app.config import Config
 from app.utils.logger import logger
-from app.core.cache_stats import CacheStats
 import time
 
 class SearchRequest(BaseModel):
@@ -12,16 +13,18 @@ class SearchRequest(BaseModel):
 
 router = APIRouter()
 
+# Initialize services
+es_client = ElasticsearchClient(Config.get_config()["elasticsearch"])
+cache_stats = CacheStats(es_client)
+search_agent = SearchAgent(es_client, cache_stats)
+
 @router.post("/search")
 async def search(request: SearchRequest) -> Dict[str, Any]:
     """Execute a natural language search query"""
     try:
-        container = ServiceContainer.get_instance()
-        search_agent = container.get_search_agent()
-        
         # Generate and execute search
         es_query, metrics = await search_agent.generate_es_query(request.query)
-        results = container.get_es_client().search(body=es_query)
+        results = es_client.search(body=es_query)
         
         return {
             "results": results,
@@ -38,8 +41,7 @@ async def search(request: SearchRequest) -> Dict[str, Any]:
 async def get_cache_stats() -> Dict[str, Any]:
     """Get detailed vector cache statistics"""
     try:
-        container = ServiceContainer.get_instance()
-        stats = container.get_cache_stats().get_stats()
+        stats = cache_stats.get_stats()
         return {
             "status": "success",
             "data": stats

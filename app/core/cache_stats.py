@@ -3,30 +3,10 @@ from datetime import datetime
 from app.utils.logger import logger
 
 class CacheStats:
-    _instance = None
-    _initialized = False
-
-    def __new__(cls, es_client=None):
-        if cls._instance is None:
-            cls._instance = super(CacheStats, cls).__new__(cls)
-        return cls._instance
-
-    def __init__(self, es_client=None):
-        if self._initialized and not es_client:
-            return
-            
-        if es_client:
-            self.es_client = es_client
-            self.stats_index = "cache_stats"
-            self._init_stats_index()
-            self._initialized = True
-
-    @classmethod
-    def get_instance(cls, es_client=None):
-        instance = cls(es_client)
-        if not instance._initialized and not es_client:
-            raise RuntimeError("CacheStats not initialized")
-        return instance
+    def __init__(self, es_client):
+        self.es_client = es_client
+        self.stats_index = "cache_stats"
+        self._init_stats_index()
 
     def _init_stats_index(self):
         """Initialize Elasticsearch stats index"""

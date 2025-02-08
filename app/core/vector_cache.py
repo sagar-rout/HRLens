@@ -82,23 +82,18 @@ class VectorCache:
     def _format_vector(self, embedding: list) -> list:
         """Format embedding for Milvus float vector"""
         try:
-            # Step 1: Convert to numpy array if not already
             if not isinstance(embedding, np.ndarray):
                 embedding = np.array(embedding)
             logger.debug(f"Step 1 - Array shape: {embedding.shape}")
 
-            # Step 2: Ensure we have a flat array
             embedding = embedding.ravel()
             logger.debug(f"Step 2 - Flattened shape: {embedding.shape}")
 
-            # Step 3: Verify dimension
             if embedding.shape[0] != 1536:
                 raise ValueError(f"Expected 1536 dimensions, got {embedding.shape[0]}")
 
-            # Step 4: Convert to float32 and ensure contiguous
             embedding = np.ascontiguousarray(embedding, dtype=np.float32)
 
-            # Step 5: Convert to Python float list
             vector = [float(x) for x in embedding]
             logger.debug(f"Step 5 - Final vector length: {len(vector)}")
 
@@ -117,7 +112,6 @@ class VectorCache:
         try:
             search_vector = self._format_vector(embedding)
 
-            # Search with L2 distance and get top 3 matches
             results = self.collection.search(
                 data=[search_vector],
                 anns_field="query_vector",

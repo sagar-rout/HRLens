@@ -15,16 +15,13 @@ class Settings(BaseSettings):
     cors_origins: List[str] = ["*"]
     
     # OpenAI settings
-    model_name: str = "gpt-4o-mini"
+    model_name: str = "gpt-4-mini"
     openai_api_key: str
 
     # Elasticsearch settings
     elasticsearch_host: str = "http://localhost:9200"
     elasticsearch_index: str = "hr_lens"
     elasticsearch_port: int = 9200
-
-    milvus_host: str = Field(default="localhost")
-    milvus_port: int = Field(default=19530)
     
     class Config:
         env_file = ".env"
@@ -33,20 +30,17 @@ class Settings(BaseSettings):
 @lru_cache()
 def get_settings() -> Settings:
     """Cached settings instance with validation"""
-    settings = Settings()
-    return settings
+    return Settings()
 
 class Config:
     @staticmethod
     def get_config() -> Dict[str, Any]:
         return {
             "elasticsearch": {
-                "hosts": os.getenv("ES_HOSTS", "http://localhost:9200").split(","),
+                "hosts": [os.getenv("ES_HOSTS", "http://localhost:9200")],
                 "verify_certs": os.getenv("ES_VERIFY_CERTS", "true").lower() == "true",
                 "elasticsearch_index": os.getenv("ELASTICSEARCH_INDEX", "hr_lens")
             },
-            "milvus_host": os.getenv("MILVUS_HOST", "localhost"),
-            "milvus_port": int(os.getenv("MILVUS_PORT", "19530")),
             "logging": {
                 "level": os.getenv("LOG_LEVEL", "INFO"),
                 "file_path": os.getenv("LOG_FILE", "logs/app.log")
