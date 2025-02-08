@@ -1,44 +1,50 @@
-import sys
-from loguru import logger
-from app.utils.path_utils import get_project_root
+import logging
+from logging.handlers import RotatingFileHandler
+import os
+from typing import Optional
 
-# Remove default logger
-logger.remove()
+class LoggerSetup:
+    _instance: Optional[logging.Logger] = None
 
-# Create logs directory
-log_path = get_project_root() / "logs"
-log_path.mkdir(exist_ok=True)
+    @classmethod
+    def get_logger(cls, name: str = "app") -> logging.Logger:
+        if cls._instance is None:
+            cls._instance = cls._setup_logger(name)
+        return cls._instance
 
-# Simple format for all logs
-log_format = (
-    "<green>{time:YYYY-MM-DD HH:mm:ss}</green> | "
-    "<level>{level: <8}</level> | "
-    "<cyan>{name}</cyan>:<cyan>{line}</cyan> | "
-    "<level>{message}</level>"
-)
+    @staticmethod
+    def _setup_logger(name: str) -> logging.Logger:
+        logger = logging.getLogger(name)
+        logger.setLevel(logging.INFO)
 
-# Console handler
-logger.add(
-    sys.stdout,
-    format=log_format,
-    level="INFO",
-    colorize=True
-)
+        # Avoid duplicate handlers
+        if not logger.handlers:
+            # Console handler
+            console_handler = logging.StreamHandler()
+            console_handler.setLevel(logging.INFO)
+            console_format = logging.Formatter(
+                '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+            )
+            console_handler.setFormatter(console_format)
+            
+            # File handler with rotation
+            log_dir = "logs"
+            os.makedirs(log_dir, exist_ok=True)
+            file_handler = RotatingFileHandler(
+                f"{log_dir}/app.log",
+                maxBytes=10485760,  # 10MB
+                backupCount=5
+            )
+            file_handler.setLevel(logging.INFO)
+            file_format = logging.Formatter(
+                '%(asctime)s - %(name)s - %(levelname)s - [%(filename)s:%(lineno)d] - %(message)s'
+            )
+            file_handler.setFormatter(file_format)
 
-# File handler for all logs
-logger.add(
-    log_path / "app.log",
-    format=log_format,
-    level="DEBUG",
-    rotation="1 day",
-    retention="7 days"
-)
+            logger.addHandler(console_handler)
+            logger.addHandler(file_handler)
 
-# File handler for errors
-logger.add(
-    log_path / "error.log",
-    format=log_format,
-    level="ERROR",
-    rotation="1 day",
-    retention="7 days"
-)
+        return logger
+
+# Create a default logger instance
+logger = LoggerSetup.get_logger()

@@ -1,5 +1,5 @@
 from functools import lru_cache
-from typing import List
+from typing import List, Dict, Any
 from pydantic_settings import BaseSettings
 from pydantic import Field
 import os
@@ -34,3 +34,22 @@ def get_settings() -> Settings:
     """Cached settings instance with validation"""
     settings = Settings()
     return settings
+
+class Config:
+    @staticmethod
+    def get_config() -> Dict[str, Any]:
+        return {
+            "elasticsearch": {
+                "hosts": os.getenv("ES_HOSTS", "http://localhost:9200").split(","),
+                "verify_certs": os.getenv("ES_VERIFY_CERTS", "true").lower() == "true",
+                "elasticsearch_index": os.getenv("ELASTICSEARCH_INDEX", "hr_lens")
+            },
+            "logging": {
+                "level": os.getenv("LOG_LEVEL", "INFO"),
+                "file_path": os.getenv("LOG_FILE", "logs/app.log")
+            },
+            "api": {
+                "version": "v1",
+                "prefix": "/api/v1"
+            }
+        }

@@ -57,7 +57,7 @@ Edit `.env` with your settings:
 OPENAI_API_KEY=your_openai_api_key
 MODEL_NAME=gpt-3.5-turbo
 ELASTICSEARCH_HOST=http://localhost:9200
-ELASTICSEARCH_INDEX=hr_data
+ELASTICSEARCH_INDEX=hr_lens
 ```
 
 3. Generate and load test data:
@@ -89,12 +89,11 @@ uvicorn app.main:app --reload
 
 POST /api/v1/search/
 ```json
-// Request
 {
   "query": "find all engineers"
 }
-
-// Response
+```
+```json
 {
   "query": {
     "query": {
@@ -106,7 +105,7 @@ POST /api/v1/search/
   "results": {
     "hits": {
       "total": {"value": 50},
-      "hits": [...]
+      "hits": []
     }
   }
 }
