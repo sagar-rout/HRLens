@@ -29,7 +29,7 @@ class ElasticsearchClient:
     def search(self, body: Dict[str, Any]) -> Dict[str, Any]:
         """Execute the provided search query"""
         try:
-            logger.debug(f"Executing search with query:\n{body}")
+            logger.info(f"Executing search with query:\n{body}")
             response = self.client.search(
                 index=self.config["elasticsearch_index"],
                 body=body
