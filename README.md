@@ -1,47 +1,58 @@
 # HRLens
 
-HRLens is an intelligent HR search system that converts natural language queries into Elasticsearch queries, making it easy to search and analyze HR data.
+HRLens is an intelligent HR search system that converts natural language queries into Elasticsearch queries, making it easy to search and analyze HR data. It uses OpenAI's GPT models to understand natural language questions and generates precise Elasticsearch queries.
 
 ## Features
 
 - Natural language to Elasticsearch query conversion
 - Support for complex search patterns and aggregations
 - Real-time query generation using OpenAI's GPT models
-- FastAPI-based REST API
-- Async operations for better performance
+- FastAPI-based REST API with async operations
+- Structured logging with Loguru
+- Bruno HTTP client for API testing and documentation
+- Comprehensive HR data model with nested fields
 
-## Prerequisites
+## Setup Guide
+
+### Prerequisites
 
 - Python 3.10+
 - Elasticsearch 8.x
 - OpenAI API key
-- Docker (optional)
+- Bruno (for API testing)
 
-## Installation
+### 1. Setup Elasticsearch
 
-1. Clone the repository:
+1. Start Elasticsearch:
+```bash
+docker run -d --name elasticsearch -p 9200:9200 -p 9300:9300 \
+  -e "discovery.type=single-node" \
+  -e "xpack.security.enabled=false" \
+  elasticsearch:8.11.1
+```
+
+2. Verify Elasticsearch is running:
+```bash
+curl http://localhost:9200
+```
+
+### 2. Setup Application
+
+1. Clone and setup environment:
 ```bash
 git clone https://github.com/yourusername/HRLens.git
 cd HRLens
-```
-
-2. Create and activate a virtual environment:
-```bash
 python -m venv venv
 source venv/bin/activate  # On Windows: venv\Scripts\activate
-```
-
-3. Install dependencies:
-```bash
 pip install -r requirements.txt
 ```
 
-4. Set up environment variables:
+2. Configure environment:
 ```bash
 cp .env.example .env
 ```
 
-Edit `.env` with your configuration:
+Edit `.env` with your settings:
 ```env
 OPENAI_API_KEY=your_openai_api_key
 MODEL_NAME=gpt-3.5-turbo
@@ -49,43 +60,41 @@ ELASTICSEARCH_HOST=http://localhost:9200
 ELASTICSEARCH_INDEX=hr_data
 ```
 
-## Usage
+3. Generate and load test data:
+```bash
+python generate_test_data.py
+```
 
-1. Start the application:
+This creates sample:
+- Employee records with realistic data
+- Department structures
+- Salary information
+- Performance reviews
+- Leave records
+
+4. Start the application:
 ```bash
 uvicorn app.main:app --reload
 ```
 
-2. Access the API at `http://localhost:8000`
+### 3. Setup Bruno for Testing
 
-3. Example API calls:
+1. Install Bruno from [https://www.usebruno.com/](https://www.usebruno.com/)
+2. Open Bruno and load the `http/hrlens` collection
+3. Run the example queries
 
-```bash
-# Search for employees
-curl -X POST "http://localhost:8000/api/v1/search/" \
-     -H "Content-Type: application/json" \
-     -d '{"query": "find all engineers in the software department"}'
+## Usage Examples
 
-# Count employees by department
-curl -X POST "http://localhost:8000/api/v1/search/" \
-     -H "Content-Type: application/json" \
-     -d '{"query": "how many employees do we have in each department"}'
-```
+### API Endpoints
 
-## API Endpoints
-
-### POST /api/v1/search/
-Converts natural language queries to Elasticsearch queries and returns results.
-
-Request:
+POST /api/v1/search/
 ```json
+// Request
 {
   "query": "find all engineers"
 }
-```
 
-Response:
-```json
+// Response
 {
   "query": {
     "query": {
@@ -103,7 +112,7 @@ Response:
 }
 ```
 
-## Query Examples
+### Example Queries
 
 1. Basic Search:
 ```
@@ -123,36 +132,19 @@ Response:
 "show employees hired in the last 6 months"
 ```
 
-## Development
-
-### Project Structure
+## Project Structure
 ```
 HRLens/
 ├── app/
-│   ├── api/
-│   │   └── v1/
-│   │       └── search.py
-│   ├── core/
-│   │   ├── elasticsearch_client.py
-│   │   ├── search_agent.py
-│   │   └── factory.py
-│   ├── schema/
-│   │   ├── templates/
-│   │   │   └── hr_system_template.py
-│   │   └── docs/
-│   │       └── DOCUMENT.md
-│   ├── utils/
-│   │   ├── logger.py
-│   │   └── path_utils.py
-│   └── main.py
+│   ├── api/v1/search.py      # API endpoints
+│   ├── core/                 # Core business logic
+│   ├── schema/               # Templates and docs
+│   └── utils/                # Utilities
+├── http/                     # Bruno API tests
+│   └── hrlens/
+│       ├── search.bru
+│       └── environment.bru
 ├── tests/
 ├── .env
 └── requirements.txt
-```
-
-### Generating Test Data
-
-Use the provided script to generate test data:
-```bash
-python generate_test_data.py
 ```
