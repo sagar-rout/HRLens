@@ -1,0 +1,20 @@
+
+### Search
+
+POST http://localhost:8000/api/search
+Content-Type: application/json
+
+{
+  "query": "Give me employees who are working from India"
+}
+
+
+### Cache stats
+
+GET http://localhost:8000/api/cache/stats
+Content-Type: application/json
+
+
+### Cache clear
+POST http://localhost:8000/api/clear_cache
+Content-Type: application/json

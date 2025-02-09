@@ -3,14 +3,20 @@ from app.core.elasticsearch_client import ElasticsearchClient
 from app.core.vector_cache import VectorCache
 from app.core.cache_stats import CacheStats
 from app.core.search_agent import SearchAgent
-from app.core.services import IElasticsearchClient, ICacheStats, IVectorCache, ISearchAgent
+from app.core.services import (
+    IElasticsearchClient,
+    ICacheStats,
+    IVectorCache,
+    ISearchAgent,
+)
 from app.config import Config
 from app.utils.logger import logger
+
 
 class ServiceContainer:
     _instance = None
     _initialized = False
-    
+
     # Service instances
     es_client: Optional[IElasticsearchClient] = None
     cache_stats: Optional[ICacheStats] = None
@@ -33,27 +39,27 @@ class ServiceContainer:
         try:
             # Get config
             config = Config.get_config()
-            
+
             # Initialize ES client first
             self.es_client = ElasticsearchClient(config["elasticsearch"])
-            
+
             # Initialize cache stats
             self.cache_stats = CacheStats.get_instance(self.es_client)
-            
+
             # Initialize vector cache
             self.vector_cache = VectorCache(config, self.es_client)
-            
+
             # Initialize search agent
             self.search_agent = SearchAgent(self.es_client, self.vector_cache)
-            
+
             logger.info("Service container initialized successfully")
-            
+
         except Exception as e:
             logger.error(f"Failed to initialize service container: {str(e)}")
             raise
 
     @classmethod
-    def get_instance(cls) -> 'ServiceContainer':
+    def get_instance(cls) -> "ServiceContainer":
         """Get or create service container instance"""
         if cls._instance is None:
             cls._instance = cls()
@@ -69,4 +75,4 @@ class ServiceContainer:
         return self.vector_cache
 
     def get_search_agent(self) -> ISearchAgent:
-        return self.search_agent 
+        return self.search_agent

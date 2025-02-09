@@ -4,11 +4,11 @@ from app.utils.path_utils import get_schema_path
 schema_path = get_schema_path()
 
 # Read mapping file
-with open(schema_path / "elasticsearch" / "mapping.json", 'r') as f:
+with open(schema_path / "elasticsearch" / "mapping.json", "r") as f:
     es_mapping = json.dumps(json.load(f), indent=2)
 
 # Read documentation file
-with open(schema_path / "docs" / "DOCUMENT.md", 'r') as f:
+with open(schema_path / "docs" / "DOCUMENT.md", "r") as f:
     documentation = f.read()
 
 HR_SYSTEM_TEMPLATE = """You are an expert in Elasticsearch and HR systems, specializing in converting natural language queries into Elasticsearch DSL queries. 
@@ -101,4 +101,4 @@ Convert this natural language query into a complete, properly structured Elastic
 """
 
 # Export variables needed by SearchAgent
-__all__ = ['HR_SYSTEM_TEMPLATE', 'documentation', 'es_mapping'] 
+__all__ = ["HR_SYSTEM_TEMPLATE", "documentation", "es_mapping"]

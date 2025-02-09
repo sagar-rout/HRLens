@@ -1,5 +1,12 @@
 from typing import Dict, Any, Optional
-from pymilvus import Collection, connections, utility, FieldSchema, CollectionSchema, DataType
+from pymilvus import (
+    Collection,
+    connections,
+    utility,
+    FieldSchema,
+    CollectionSchema,
+    DataType,
+)
 import numpy as np
 from app.utils.logger import logger
 from app.core.cache_stats import CacheStats
@@ -23,16 +30,13 @@ class VectorCache:
         # Core settings
         self.collection_name = "semantic_cache"
         self.collection = None
-        # More restrictive threshold (0.2 means 80% similarity required)
-        self.distance_threshold = 0.2
+        self.distance_threshold = 0.2  # More restrictive threshold
         self.stats = CacheStats.get_instance(es_client)
 
         try:
             # Initialize Milvus connection
             connections.connect(
-                alias="default",
-                host=config["milvus_host"],
-                port=config["milvus_port"]
+                alias="default", host=config["milvus_host"], port=config["milvus_port"]
             )
             self._init_collection()
             logger.info(f"Vector cache initialized: {self.collection_name}")
@@ -41,36 +45,35 @@ class VectorCache:
             logger.error(f"Cache initialization failed: {str(e)}")
 
     def _init_collection(self):
-        """Initialize or create the cache collection if it doesn't exist"""
+        """Initialize or create the cache collection"""
         try:
-            # Use existing collection if available
             if utility.has_collection(self.collection_name):
                 self.collection = Collection(self.collection_name)
                 self.collection.load()
-                count = self.collection.num_entities
-                logger.info(f"Loaded existing cache with {count} entries")
+                logger.info(
+                    f"Loaded existing cache with {self.collection.num_entities} entries"
+                )
                 return
 
-            # Create new collection
             fields = [
-                FieldSchema(name="id", dtype=DataType.INT64, is_primary=True, auto_id=True),
+                FieldSchema(
+                    name="id", dtype=DataType.INT64, is_primary=True, auto_id=True
+                ),
                 FieldSchema(name="query_vector", dtype=DataType.FLOAT_VECTOR, dim=1536),
                 FieldSchema(name="query_text", dtype=DataType.VARCHAR, max_length=500),
                 FieldSchema(name="es_query", dtype=DataType.VARCHAR, max_length=4000),
-                FieldSchema(name="created_at", dtype=DataType.INT64)
+                FieldSchema(name="created_at", dtype=DataType.INT64),
             ]
 
             schema = CollectionSchema(fields=fields, description="Semantic query cache")
             self.collection = Collection(name=self.collection_name, schema=schema)
-
-            # Create search index
             self.collection.create_index(
                 field_name="query_vector",
                 index_params={
                     "metric_type": "L2",
                     "index_type": "IVF_FLAT",
-                    "params": {"nlist": 128}
-                }
+                    "params": {"nlist": 128},
+                },
             )
             self.collection.load()
             logger.info("Created new cache collection")
@@ -82,22 +85,12 @@ class VectorCache:
     def _format_vector(self, embedding: list) -> list:
         """Format embedding for Milvus float vector"""
         try:
-            if not isinstance(embedding, np.ndarray):
-                embedding = np.array(embedding)
-            logger.debug(f"Step 1 - Array shape: {embedding.shape}")
-
-            embedding = embedding.ravel()
-            logger.debug(f"Step 2 - Flattened shape: {embedding.shape}")
+            embedding = np.array(embedding, dtype=np.float32).flatten()
 
             if embedding.shape[0] != 1536:
                 raise ValueError(f"Expected 1536 dimensions, got {embedding.shape[0]}")
 
-            embedding = np.ascontiguousarray(embedding, dtype=np.float32)
-
-            vector = [float(x) for x in embedding]
-            logger.debug(f"Step 5 - Final vector length: {len(vector)}")
-
-            return vector
+            return embedding.tolist()
 
         except Exception as e:
             logger.error(f"Vector formatting failed: {str(e)}", exc_info=True)
@@ -115,12 +108,9 @@ class VectorCache:
             results = self.collection.search(
                 data=[search_vector],
                 anns_field="query_vector",
-                param={
-                    "metric_type": "L2",
-                    "params": {"nprobe": 16}  # Increased for better accuracy
-                },
-                limit=3,  # Get top 3 to find best match
-                output_fields=["query_text", "es_query", "created_at"]
+                param={"metric_type": "L2", "params": {"nprobe": 16}},
+                limit=1,  # Only need the top result
+                output_fields=["query_text", "es_query", "created_at"],
             )
 
             if not results or not results[0]:
@@ -128,32 +118,22 @@ class VectorCache:
                 self.stats.update(hit=False, query=query, is_store=False)
                 return None
 
-            # Find best match among top results
-            best_match = None
-            best_distance = float('inf')
+            hit = results[0][0]
+            distance = hit.distance
+            similarity = 1 - (distance / 2)  # L2 distance normalized
 
-            for hits in results[0]:
-                distance = hits.distance
-                # Normalize distance to 0-1 range
-                similarity = 1 - (distance / 2)  # L2 distance normalized
-
-                logger.debug(f"Candidate match: '{hits.entity.get('query_text')}' "
-                             f"(similarity: {similarity:.4f})")
-
-                if distance < self.distance_threshold and distance < best_distance:
-                    best_match = hits
-                    best_distance = distance
-
-            if best_match:
-                self.stats.update(hit=True, query=query, is_store=False)
-                similarity = 1 - (best_distance / 2)
+            if distance < self.distance_threshold:
+                es_query = json.loads(hit.entity.get("es_query"))
                 logger.info(
-                    f"Cache hit: '{query}' matched '{best_match.entity.get('query_text')}' "
+                    f"Cache hit: '{query}' matched '{hit.entity.get('query_text')}' "
                     f"(similarity: {similarity:.2%})"
                 )
-                return json.loads(best_match.entity.get('es_query'))
+                self.stats.update(hit=True, query=query, is_store=False)
+                return es_query
 
-            logger.info(f"Cache miss - no matches above threshold ({self.distance_threshold})")
+            logger.info(
+                f"Cache miss - no matches above threshold ({self.distance_threshold})"
+            )
             self.stats.update(hit=False, query=query, is_store=False)
             return None
 
@@ -169,19 +149,15 @@ class VectorCache:
 
         try:
             vector = self._format_vector(embedding)
-
-            # Store with timestamp
             entity = {
                 "query_vector": vector,
                 "query_text": query,
                 "es_query": json.dumps(es_query),
-                "created_at": int(datetime.now().timestamp())
+                "created_at": int(datetime.now().timestamp()),
             }
 
             self.collection.insert([entity])
             self.collection.flush()
-
-            # Update stats with store=True to increment queries_cached
             self.stats.update(hit=True, query=query, is_store=True)
             logger.info(f"Query cached: '{query}'")
 
@@ -194,3 +170,38 @@ class VectorCache:
         return self.stats.get_stats(
             total_entries=self.collection.num_entities if self.collection else 0
         )
+
+    async def clear_cache(self):
+        """Clear both vector cache and cache statistics."""
+        try:
+            # Release collection first
+            if self.collection:
+                self.collection.release()
+                self.collection = None
+
+            # Drop collection if exists
+            if utility.has_collection(self.collection_name):
+                utility.drop_collection(self.collection_name)
+                logger.info(f"Cache collection '{self.collection_name}' dropped")
+
+            # Wait for collection to be fully dropped
+            while utility.has_collection(self.collection_name):
+                await asyncio.sleep(0.5)
+
+            # Reinitialize collection
+            self._init_collection()
+            
+            # Verify collection is empty
+            if self.collection.num_entities != 0:
+                raise Exception("Cache collection not properly cleared")
+
+            # Clear ES cache stats
+            await self.stats.clear_stats()
+
+            logger.info("Cache and statistics cleared successfully")
+            return {"status": "success", "message": "Cache cleared successfully"}
+
+        except Exception as e:
+            error_msg = f"Failed to clear cache: {str(e)}"
+            logger.error(error_msg, exc_info=True)
+            raise Exception(error_msg)
