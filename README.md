@@ -1,11 +1,11 @@
 # HRLens
 
-HRLens is an AI-powered HR analytics and search platform that enables natural language querying of HR data using a combination of LLMs, vector search, and Elasticsearch.
+HRLens is an AI-powered HR analytics and search platform that enables natural language querying of HR data using LLMs, vector search, and Elasticsearch.
 
 ## Features
 
 - Natural language query processing
-- Semantic search with vector similarity caching
+- Vector-based semantic caching using Milvus
 - Elasticsearch-based data storage and retrieval
 - Performance tracking and monitoring
 
@@ -14,7 +14,7 @@ HRLens is an AI-powered HR analytics and search platform that enables natural la
 ### Core Components
 
 1. **Search Agent**: Converts natural language to Elasticsearch queries
-2. **Vector Cache**: Stores semantically similar queries using Milvus
+2. **Vector Cache**: Stores semantically similar queries in Milvus
 3. **Elasticsearch**: Primary data storage and search engine
 
 ### Query Processing Flow
@@ -25,25 +25,21 @@ graph TD
     B --> C{Check Vector Cache}
     C -->|Cache Hit| D[Retrieve ES Query]
     C -->|Cache Miss| E[Generate ES Query via LLM]
-    E --> F[Store Query in Cache]
+    E --> F[Store in Vector Cache]
     D --> G[Execute ES Search]
     F --> G
     G --> H[Return Results]
 ```
 
-1. **Query Input**
-   - User submits natural language query
-   - System generates vector embedding
+1. **Query Processing**
+   - Convert natural language query to vector embedding
+   - Check Milvus for similar existing queries
+   - Generate new ES query via LLM if needed
 
-2. **Cache Check**
-   - Query vector compared with cached vectors in Milvus
-   - If match found: retrieve associated Elasticsearch query
-   - If no match: generate new query via LLM
-
-3. **Search Execution**
-   - Execute Elasticsearch query (cached or newly generated)
-   - Return results to user
-   - Store new queries in vector cache for future use
+2. **Search Execution**
+   - Use cached or newly generated Elasticsearch query
+   - Execute search and return results
+   - Cache new queries for future use
 
 ## Setup
 

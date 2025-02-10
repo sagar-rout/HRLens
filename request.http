@@ -1,20 +1,13 @@
-
-### Search
-
-POST http://localhost:8000/api/search
+### Search Query
+POST http://localhost:8000/api/v1/search
 Content-Type: application/json
 
 {
-  "query": "Give me employees who are working from India"
+    "query": "Find software engineers in India"
 }
 
+### Get Cache Stats
+GET http://localhost:8000/api/v1/cache/stats
 
-### Cache stats
-
-GET http://localhost:8000/api/cache/stats
-Content-Type: application/json
-
-
-### Cache clear
-POST http://localhost:8000/api/clear_cache
-Content-Type: application/json
+### Clear Cache
+POST http://localhost:8000/api/v1/cache/clear

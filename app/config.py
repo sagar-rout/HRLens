@@ -48,6 +48,10 @@ class Config:
                 "verify_certs": os.getenv("ES_VERIFY_CERTS", "true").lower() == "true",
                 "elasticsearch_index": os.getenv("ELASTICSEARCH_INDEX", "hr_lens"),
             },
+            "milvus": {
+                "host": os.getenv("MILVUS_HOST", "localhost"),
+                "port": int(os.getenv("MILVUS_PORT", "19530")),
+            },
             "logging": {
                 "level": os.getenv("LOG_LEVEL", "INFO"),
                 "file_path": os.getenv("LOG_FILE", "logs/app.log"),
